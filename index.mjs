@@ -201,6 +201,11 @@ const setupApiRoutes = (app) => {
     /******************* END CLOUD ****************************/
 
     app.get('/api/dockerVersion', async (req, res) => {
+            // Only check Docker Hub when not opted out - fixes #142 (unexpected outbound traffic)
+            if (process.env.ANALYTICS_OFF) {
+                res.status(200).send({ results: [] });
+                return;
+            }
             console.log("Getting Docker Version");
             await axios.get("https://hub.docker.com/v2/namespaces/eleventrading/repositories/tradenote/tags")
             .then((response) => {
@@ -369,7 +374,7 @@ const setupApiRoutes = (app) => {
                 }
 
             }
-            return -1; // Return -1 if not found
+            return false; // Return false if not found
         }
 
         // Usage example
@@ -528,7 +533,7 @@ const startIndex = async () => {
                 appId: process.env.APP_ID,
                 masterKey: process.env.MASTER_KEY,
                 port: port,
-                masterKeyIps: ['0.0.0.0/0', '::/0'],
+                masterKeyIps: process.env.MASTER_KEY_IPS ? process.env.MASTER_KEY_IPS.split(',') : ['127.0.0.1', '::1'],
                 allowClientClassCreation: false,
                 allowExpiredAuthDataToken: false
             });
@@ -558,7 +563,7 @@ const startIndex = async () => {
 
 
 
-    if (process.env.PARSE_DASHBOARD) app.use('/parseDashboard', parseDashboard)
+    //if (process.env.PARSE_DASHBOARD) app.use('/parseDashboard', parseDashboard)
 
     //INIT
     //console.log("\nInitializing ParseNode")
