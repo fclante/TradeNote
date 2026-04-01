@@ -307,8 +307,11 @@ export async function useGetTrades(param) {
             let endD = selectedRange.value.end
             //console.log("start D "+startD)
             //console.log("end D "+endD)
-            query.greaterThanOrEqualTo("dateUnix", startD)
-            query.lessThan("dateUnix", endD)
+            // When "All" is selected, start and end are both 0 - skip date filtering
+            if (startD !== 0 || endD !== 0) {
+                query.greaterThanOrEqualTo("dateUnix", startD)
+                query.lessThan("dateUnix", endD)
+            }
             query.ascending("dateUnix");
             query.limit(queryLimit.value);
         }
