@@ -393,6 +393,10 @@ async function createTempExecutions() {
 
         for (const key of keys) {
             try {
+                // Skip empty rows (e.g. trailing blank lines in CSV) - fixes #122
+                if (!tradesData[key]['T/D'] || !tradesData[key]['S/D']) {
+                    continue;
+                }
                 let temp2 = {};
                 temp2.account = tradesData[key].Account
                 temp2.broker = selectedBroker.value
