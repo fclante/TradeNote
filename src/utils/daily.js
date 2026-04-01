@@ -95,6 +95,7 @@ export const useUpdateDailySatisfaction = async (param1, param2) => { //param1 :
 
         const parseObject = Parse.Object.extend("satisfactions");
         const query = new Parse.Query(parseObject);
+        query.equalTo("user", Parse.User.current())
         query.equalTo("dateUnix", param1)
         query.doesNotExist("tradeId") /// this is how we differentiate daily from trades satisfaction records
         const results = await query.first();
@@ -102,7 +103,7 @@ export const useUpdateDailySatisfaction = async (param1, param2) => { //param1 :
             console.log(" -> Updating satisfaction")
             results.set("satisfaction", param2)
 
-            results.save()
+            await results.save()
                 .then(async () => {
                     console.log(' -> Updated satisfaction with id ' + results.id)
                 }, (error) => {
@@ -116,7 +117,7 @@ export const useUpdateDailySatisfaction = async (param1, param2) => { //param1 :
             object.set("dateUnix", param1)
             object.set("satisfaction", param2)
             object.setACL(new Parse.ACL(Parse.User.current()));
-            object.save()
+            await object.save()
                 .then(async (object) => {
                     console.log(' -> Added new satisfaction with id ' + object.id)
                 }, (error) => {
