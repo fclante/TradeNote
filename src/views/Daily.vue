@@ -374,6 +374,17 @@ const saveDailyTags = async () => {
     if (tradeTagsChanged.value) {
         await Promise.all([useUpdateAvailableTags(), useUpdateTags()])
         await Promise.all([useGetTags(), useGetAvailableTags()])
+
+        // Sync newly created tags into selectedTags so trades don't disappear - fixes #129
+        let selectedTagsArray = Object.values(selectedTags.value)
+        for (let group of availableTags) {
+            for (let tag of group.tags) {
+                if (!selectedTagsArray.includes(tag.id)) {
+                    selectedTags.value.push(tag.id)
+                }
+            }
+        }
+        localStorage.setItem('selectedTags', selectedTags.value)
     }
     tradeTagsChanged.value = false
     closeTagsModal()
@@ -404,8 +415,16 @@ async function tradeSatisfactionChange(param1, param2) {
     tradeSatisfactionDateUnix = param1.td
     tradeSatisfaction = param2
     param1.satisfaction = tradeSatisfaction
-    await updateTradeSatisfaction()
 
+    // Update satisfactionTradeArray so it persists across re-renders - fixes #76
+    let existingIndex = satisfactionTradeArray.findIndex(obj => obj.tradeId == tradeSatisfactionId)
+    if (existingIndex != -1) {
+        satisfactionTradeArray[existingIndex].satisfaction = tradeSatisfaction
+    } else {
+        satisfactionTradeArray.push({ tradeId: tradeSatisfactionId, dateUnix: tradeSatisfactionDateUnix, satisfaction: tradeSatisfaction })
+    }
+
+    await updateTradeSatisfaction()
 }
 
 async function updateTradeSatisfaction() { //param1 : daily unixDate ; param2 : true / false ; param3: dateUnixDay ; param4: tradeId
@@ -413,16 +432,16 @@ async function updateTradeSatisfaction() { //param1 : daily unixDate ; param2 : 
     return new Promise(async (resolve, reject) => {
         const parseObject = Parse.Object.extend("satisfactions");
         const query = new Parse.Query(parseObject);
+        query.equalTo("user", Parse.User.current())
         query.equalTo("tradeId", tradeSatisfactionId)
         const results = await query.first();
         if (results) {
             console.log(" -> Updating satisfaction")
             results.set("satisfaction", tradeSatisfaction)
 
-            results.save()
+            await results.save()
                 .then(async () => {
                     console.log(' -> Updated satisfaction with id ' + results.id + " to " + tradeSatisfaction)
-                    //spinnerSetupsText.value = "Updated setup"
                 }, (error) => {
                     console.log('Failed to create new object, with error code: ' + error.message);
                 })
@@ -435,17 +454,14 @@ async function updateTradeSatisfaction() { //param1 : daily unixDate ; param2 : 
             object.set("tradeId", tradeSatisfactionId)
             object.set("satisfaction", tradeSatisfaction)
             object.setACL(new Parse.ACL(Parse.User.current()));
-            object.save()
+            await object.save()
                 .then(async (object) => {
                     console.log(' -> Added new satisfaction with id ' + object.id)
-                    //spinnerSetupsText.value = "Added new setup"
                 }, (error) => {
                     console.log('Failed to create new object, with error code: ' + error.message);
                 })
         }
         resolve()
-
-
     })
 }
 
