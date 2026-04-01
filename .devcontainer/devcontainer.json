@@ -1,0 +1,30 @@
+{
+  "name": "TradeNote Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [8080, 27017],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Vue.volar",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "mongodb.mongodb-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "npm install",
+  "remoteEnv": {
+    "NODE_ENV": "dev",
+    "MONGO_URI": "mongodb://tradenote:tradenote@mongo:27017/tradenote?authSource=admin",
+    "TRADENOTE_DATABASE": "tradenote",
+    "APP_ID": "devcontainer",
+    "MASTER_KEY": "devcontainer",
+    "TRADENOTE_PORT": "8080",
+    "ANALYTICS_OFF": "true"
+  }
+}
