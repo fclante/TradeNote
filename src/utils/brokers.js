@@ -1045,8 +1045,38 @@ export async function useNinjaTrader(param) {
                     //console.log("element.TradeDate. " + element.TradeDate)
                     let date = element.Time.split(" ")[0]
 
-                    temp["T/D"] = date
-                    temp["S/D"] = date
+                    // Handle various NinjaTrader date formats - fixes #163
+                    // NinjaTrader can export dates as MM/DD/YYYY, DD/MM/YYYY, or DDMMYYYY depending on locale
+                    if (date.includes("/")) {
+                        // Already in slash-delimited format (e.g., "3/19/2026")
+                        temp["T/D"] = date
+                        temp["S/D"] = date
+                    } else if (date.length === 8 && !isNaN(date)) {
+                        // Compact format like "19032026" (DDMMYYYY) or "03192026" (MMDDYYYY)
+                        // Detect by checking if first two digits > 12 (must be DD)
+                        let part1 = parseInt(date.substring(0, 2))
+                        let part2 = parseInt(date.substring(2, 4))
+                        let year = date.substring(4, 8)
+                        if (part1 > 12) {
+                            // DDMMYYYY format
+                            temp["T/D"] = part2 + "/" + part1 + "/" + year
+                            temp["S/D"] = part2 + "/" + part1 + "/" + year
+                        } else {
+                            // MMDDYYYY format
+                            temp["T/D"] = part1 + "/" + part2 + "/" + year
+                            temp["S/D"] = part1 + "/" + part2 + "/" + year
+                        }
+                    } else {
+                        // Try dayjs parsing as fallback
+                        let parsed = dayjs(date)
+                        if (parsed.isValid()) {
+                            temp["T/D"] = parsed.format("M/D/YYYY")
+                            temp["S/D"] = parsed.format("M/D/YYYY")
+                        } else {
+                            reject("Unsupported NinjaTrader date format: " + date)
+                            return
+                        }
+                    }
 
                     temp.Currency = "USD"
                     temp.Type = "future"
@@ -1074,7 +1104,7 @@ export async function useNinjaTrader(param) {
                     let priceNumber = Number(element.Price)
                     temp.Price = priceNumber.toString()
 
-                    temp["Exec Time"] = dayjs(element.Time).format("HH:mm:ss") // we do not use tz because at start you should precise that you're in NY timezone + in settings set the NY time format before export
+                    temp["Exec Time"] = dayjs(temp["T/D"] + " " + element.Time.split(" ").slice(1).join(" "), "M/D/YYYY HH:mm:ss").format("HH:mm:ss") // Parse with explicit format to handle various locale formats
                     //console.log(" exect time "+temp["Exec Time"])
                     //temp["Exec Time"] = dayjs(element.Time, "hh:mm:ss A").format("HH:mm:ss")
 
@@ -1402,6 +1432,9 @@ export async function useTastyTrade(param, param2) {
     return new Promise(async (resolve, reject) => {
         try {
             let papaParse = Papa.parse(param, { header: true })
+
+            // Filter out empty/invalid rows before sorting - fixes #132
+            papaParse.data = papaParse.data.filter(row => row.Date && row.Date.trim() !== '')
 
             // we need to sort because in case of option exercice I need to look into the past
             papaParse.data.sort((a, b) => {
