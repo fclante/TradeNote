@@ -630,8 +630,6 @@ export async function useBrokerInteractiveBrokers(param, param2, ctx) {
             // Strip BOM and leading whitespace that can corrupt the first CSV column
             let cleanedParam = param.replace(/^\uFEFF/, '').trim()
             let papaParse = Papa.parse(cleanedParam, { header: true, skipEmptyLines: true, transformHeader: h => h.trim().replace(/^"|"$/g, '') })
-            console.log("  --> IB papaParse rows: " + papaParse.data.length)
-            console.log("  --> IB first row: " + JSON.stringify(papaParse.data[0]))
 
             papaParse.data.sort((a, b) => dayjs(a["Date/Time"], "YYYYMMDD;HHmmss") - dayjs(b["Date/Time"], "YYYYMMDD;HHmmss"))
 
@@ -715,7 +713,6 @@ export async function useBrokerInteractiveBrokers(param, param2, ctx) {
                     _tradesData.push(temp)
                 }
             });
-            console.log("  --> IB tradesData after parse: " + _tradesData.length)
             //console.log(" -> Trades Data\n" + JSON.stringify(tradesData))
         } catch (error) {
             console.log("  --> ERROR " + error)

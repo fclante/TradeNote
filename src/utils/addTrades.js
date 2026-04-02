@@ -392,9 +392,7 @@ async function createTempExecutions(ctx) {
         const _tradeAccounts = ctx ? ctx.tradeAccounts : tradeAccounts
 
         //spinnerLoadingPageText.value = "Creating temp executions"
-        console.log(" -> tradesData length: " + _tradesData.length)
         const keys = Object.keys(_tradesData);
-        console.log(" -> keys: " + JSON.stringify(keys))
         var temp = [];
         var i = 0
 
