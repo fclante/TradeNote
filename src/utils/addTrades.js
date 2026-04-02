@@ -392,7 +392,9 @@ async function createTempExecutions(ctx) {
         const _tradeAccounts = ctx ? ctx.tradeAccounts : tradeAccounts
 
         //spinnerLoadingPageText.value = "Creating temp executions"
+        console.log(" -> tradesData length: " + _tradesData.length)
         const keys = Object.keys(_tradesData);
+        console.log(" -> keys: " + JSON.stringify(keys))
         var temp = [];
         var i = 0
 
@@ -596,13 +598,16 @@ export const useGetOHLCV = (param, param2, param3, param4, param5, ctx) => { //p
         }
         
         //spinnerLoadingPageText.value = "Getting OHLCV"
-        console.log(" Traded Symbols " + JSON.stringify(tradedSymbols))
+        console.log(" Traded Symbols " + JSON.stringify(_tradedSymbols))
         _ohlcv.length = 0 // reinitialize, for API
 
-        
+        if (_tradedSymbols.length === 0) {
+            resolve(_ohlcv)
+            return
+        }
 
         const asyncLoop = async () => {
-            for (let i = 0; i < tradedSymbols.length; i++) { // I think that async needs to be for instead of foreach
+            for (let i = 0; i < _tradedSymbols.length; i++) { // I think that async needs to be for instead of foreach
                 let temp = {}
                 temp.symbol = _tradedSymbols[i].symbol
                 let databentoSymbol = temp.symbol
@@ -751,6 +756,7 @@ export const useGetOHLCV = (param, param2, param3, param4, param5, ctx) => { //p
 
         }
         await asyncLoop()
+        resolve(_ohlcv)
     })
 }
 
@@ -1846,7 +1852,7 @@ export async function useCreateBlotter(param, ctx) {
             }
 
         }
-        for (let key in _blotter) delete blotter[key]
+        for (let key in _blotter) delete _blotter[key]
         Object.assign(_blotter, temp10)
         //console.log(" -> BLOTTER " + JSON.stringify(blotter))
         resolve()
@@ -2035,7 +2041,7 @@ export async function useCreatePnL(ctx) {
 
 
         }
-        for (let key in pAndL) delete pAndL[key]
+        for (let key in _pAndL) delete _pAndL[key]
         Object.assign(_pAndL, temp9)
         //console.log(" -> P&L: " + JSON.stringify(pAndL))
 

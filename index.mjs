@@ -7,6 +7,7 @@ import fs from 'fs'
 import axios from 'axios'
 import { MongoClient } from "mongodb"
 import Proxy from 'http-proxy'
+import promClient from 'prom-client'
 import { useImportTrades, useGetExistingTradesArray, useUploadTrades } from './src/utils/addTrades.js';
 import { currentUser, uploadMfePrices } from './src/stores/globals.js';
 import { useGetTimeZone } from './src/utils/utils.js';
@@ -49,6 +50,37 @@ let tradenoteDatabase = process.env.TRADENOTE_DATABASE
 var app = express();
 app.use(express.json());
 
+/* PROMETHEUS METRICS */
+const promRegistry = new promClient.Registry();
+promClient.collectDefaultMetrics({ register: promRegistry });
+
+const httpRequestDuration = new promClient.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+    registers: [promRegistry],
+});
+
+const httpRequestTotal = new promClient.Counter({
+    name: 'http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code'],
+    registers: [promRegistry],
+});
+
+app.use((req, res, next) => {
+    const end = httpRequestDuration.startTimer();
+    res.on('finish', () => {
+        const route = req.route ? req.route.path : req.path;
+        const labels = { method: req.method, route, status_code: res.statusCode };
+        end(labels);
+        httpRequestTotal.inc(labels);
+    });
+    next();
+});
+/* END PROMETHEUS METRICS */
+
 const port = process.env.TRADENOTE_PORT;
 const PROXY_PORT = 39482;
 
@@ -77,11 +109,16 @@ const setupApiRoutes = (app) => {
 
     app.post("/api/posthog", (req, res) => {
         //console.log("\nAPI : posthog")
-        if (process.env.ANALYTICS_OFF) {
+        if (process.env.ANALYTICS_OFF || process.env.ANALYTICS_OFF === undefined) {
             res.send("off")
         } else {
             res.send("phc_FxkjH1O898jKu0yiELC3aWKda3vGov7waGN0weU5kw0")
         }
+    });
+
+    app.get('/metrics', async (req, res) => {
+        res.setHeader('Content-Type', promRegistry.contentType);
+        res.end(await promRegistry.metrics());
     });
 
 
