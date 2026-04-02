@@ -732,7 +732,7 @@ export const useGetOHLCV = (param, param2, param3, param4, param5, ctx) => { //p
                         .then((response) => {
                             //console.log(" -> data " + JSON.stringify(response))
                             //console.log(" -> ohlcvData " + JSON.stringify(ohlcvData))
-                            temp.ohlcv = response.data.results
+                            temp.ohlcv = response.data.results || []
                             _ohlcv.push(temp)
                             //console.log(" -> ohlcv " + JSON.stringify(ohlcv))
                             resolve(_ohlcv)
@@ -774,6 +774,13 @@ export const useGetMFEPrices = (tempExec, initEntryTime, initEntryPrice, trde, o
             //findIndex gets the first value. So, for entry, if equal, we take next candle. For exit, if equal, we use that candle
             let tempStartIndex = ohlcvSymbol.findIndex(n => n.t >= initEntryTime * 1000)
             let tempEndIndex = ohlcvSymbol.findIndex(n => n.t >= trde.exitTime * 1000) //findIndex returns the first element
+
+            // No matching candles found (sparse/missing OHLCV data) - skip MFE calculation
+            if (tempStartIndex === -1 || tempEndIndex === -1) {
+                resolve()
+                return
+            }
+
             let tempStartTime = ohlcvSymbol[tempStartIndex]
             let tempEndTime = ohlcvSymbol[tempEndIndex]
 
@@ -794,8 +801,8 @@ export const useGetMFEPrices = (tempExec, initEntryTime, initEntryPrice, trde, o
                 endIndex = tempEndIndex
                 endTime = tempEndTime
             } else {
-                endIndex = tempEndIndex - 1
-                endTime = ohlcvSymbol[tempEndIndex - 1].t
+                endIndex = tempEndIndex > 0 ? tempEndIndex - 1 : 0
+                endTime = ohlcvSymbol[endIndex].t
             }
 
             //console.log("   ----> Temp Start index " + tempStartIndex + ", temp end index " + tempEndIndex)
