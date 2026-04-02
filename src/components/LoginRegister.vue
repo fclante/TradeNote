@@ -8,12 +8,20 @@ import { useGetAvailableTags, useUpdateAvailableTags, useUpdateTags, useFindHigh
 import Parse from 'parse/dist/parse.min.js'
 import axios from 'axios'
 
-const loginForm = reactive({ username: null, password: null, timeZone: "America/New_York" })
+const loginForm = reactive({ username: '', password: '', timeZone: "America/New_York" })
 const signingUp = ref(false)
 let existingSchema = []
 
 
+function syncAutofill() {
+  const emailEl = document.getElementById('inputEmail')
+  const passEl = document.getElementById('inputPassword')
+  if (emailEl && emailEl.value) loginForm.username = emailEl.value
+  if (passEl && passEl.value) loginForm.password = passEl.value
+}
+
 async function login() {
+  syncAutofill()
   console.log("\nLOGIN")
   signingUp.value = true
   if (!localStorage.getItem('parse_app_id')) {
@@ -50,6 +58,7 @@ async function login() {
 }
 
 async function register() {
+  syncAutofill()
   console.log("\nREGISTER")
   signingUp.value = true
   if (!localStorage.getItem('parse_app_id')) {
@@ -443,9 +452,9 @@ const checkLegacy = async (param) => {
     <form class="text-center col-md-4 offset-md-4 mt-5" v-on:submit.prevent="pageId == 'login' ? login() : register()">
       <img class="mb-4" src="">
       <h1 class="h3 mb-3 fw-normal">{{ pageId == 'login' ? "Please Log in" : "Please Register" }}</h1>
-      <input type="email" id="inputEmail" class="form-control" placeholder="Email" required="" autofocus=""
+      <input type="email" id="inputEmail" name="username" class="form-control" placeholder="Email" required="" autofocus=""
         v-model="loginForm.username" autocomplete="username">
-      <input type="password" id="inputPassword" class="mt-1 form-control" placeholder="Password" required=""
+      <input type="password" id="inputPassword" name="password" class="mt-1 form-control" placeholder="Password" required=""
         v-model="loginForm.password" v-bind:autocomplete="pageId == 'login' ? 'current-password' : 'new-password'">
       <div v-if="pageId == 'register'">
         <p class="mt-3">Choose the timezone (of the market) your trades will be located and imported from.</p>
