@@ -205,10 +205,12 @@ export const useGetCurrentUser = () => {
     //console.log("currentUser " + JSON.stringify(currentUser.value))
 }
 
-export function useGetTimeZone() {
+export function useGetTimeZone(ctx) {
     //console.log("Getting timezone")
-    timeZoneTrade.value = currentUser.value.hasOwnProperty("timeZone") ? currentUser.value.timeZone : 'America/New_York'
-    console.log(" -> TimeZone for Trades: " + timeZoneTrade.value)
+    const _currentUser = ctx ? ctx.currentUser : currentUser.value
+    const tz = _currentUser.hasOwnProperty("timeZone") ? _currentUser.timeZone : 'America/New_York'
+    if (ctx) { ctx.timeZoneTrade = tz } else { timeZoneTrade.value = tz }
+    console.log(" -> TimeZone for Trades: " + tz)
 }
 
 export async function useGetPeriods() {

@@ -30,8 +30,9 @@ tradesData.length = 0
 /****************************
  * TRADEZERO
  ****************************/
-export async function useBrokerTradeZero(param) {
+export async function useBrokerTradeZero(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         //File import
 
         try {
@@ -52,7 +53,7 @@ export async function useBrokerTradeZero(param) {
 
                 }
                 element.SymbolOriginal = element["Symbol"]
-                tradesData.push(JSON.parse(JSON.stringify(element)))
+                _tradesData.push(JSON.parse(JSON.stringify(element)))
             });
             //console.log("tradesData " + JSON.stringify(tradesData))
         } catch (error) {
@@ -68,8 +69,9 @@ export async function useBrokerTradeZero(param) {
 /****************************
  * METATRADER 5
  ****************************/
-export async function useBrokerMetaTrader5(param) {
+export async function useBrokerMetaTrader5(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             var workbook = XLSX.read(param);
             var result = {};
@@ -144,7 +146,7 @@ export async function useBrokerMetaTrader5(param) {
                         temp["Clr Broker"] = ""
                         temp.Liq = ""
                         temp.Note = ""
-                        tradesData.push(temp)
+                        _tradesData.push(temp)
                     }
                 }
             }
@@ -161,8 +163,9 @@ export async function useBrokerMetaTrader5(param) {
 /****************************
  * TD AMERITRADE
  ****************************/
-export async function useBrokerTdAmeritrade(param) {
+export async function useBrokerTdAmeritrade(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             let arrayLines = param.split('\n')
             let account
@@ -401,7 +404,7 @@ export async function useBrokerTdAmeritrade(param) {
                     temp.Liq = ""
                     temp.Note = ""
 
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                     resolve()
                 })
             }
@@ -444,8 +447,9 @@ export async function useBrokerTdAmeritrade(param) {
 /****************************
  * TRADESTATION
  ****************************/
-export async function useBrokerTradeStation(param) {
+export async function useBrokerTradeStation(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             //console.log(" param " + param)
             let newCsv = [];
@@ -602,7 +606,7 @@ export async function useBrokerTradeStation(param) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                 }
             });
             //console.log(" -> Trades Data\n" + JSON.stringify(tradesData))
@@ -618,8 +622,9 @@ export async function useBrokerTradeStation(param) {
 /****************************
  * INTERACTIVE BROKERS
  ****************************/
-export async function useBrokerInteractiveBrokers(param, param2) {
+export async function useBrokerInteractiveBrokers(param, param2, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             //console.log("param "+param)
             let papaParse = Papa.parse(param, { header: true })
@@ -703,7 +708,7 @@ export async function useBrokerInteractiveBrokers(param, param2) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                 }
             });
             //console.log(" -> Trades Data\n" + JSON.stringify(tradesData))
@@ -718,8 +723,9 @@ export async function useBrokerInteractiveBrokers(param, param2) {
 /****************************
  * TRADOVATE
  ****************************/
-export async function useTradovate(param) {
+export async function useTradovate(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
 
             let papaParse = Papa.parse(param, { header: true })
@@ -858,7 +864,7 @@ export async function useTradovate(param) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
 
 
 
@@ -878,8 +884,9 @@ export async function useTradovate(param) {
  * HELDENTRADER (no swing trading)
  ****************************/
 // Removed csv lines + reversed csv
-export async function useBrokerHeldentrader(param) {
+export async function useBrokerHeldentrader(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             //console.log(" param " + param)
 
@@ -1013,7 +1020,7 @@ export async function useBrokerHeldentrader(param) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))*/
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                 }
             })
 
@@ -1029,8 +1036,9 @@ export async function useBrokerHeldentrader(param) {
 /****************************
  * NINJATRADER
  ****************************/
-export async function useNinjaTrader(param) {
+export async function useNinjaTrader(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
 
             let papaParse = Papa.parse(param, { header: true })
@@ -1144,7 +1152,7 @@ export async function useNinjaTrader(param) {
                     temp.Note = ""
 
                     //console.log("temp " + JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                 }
             });
             //console.log(" -> Trades Data\n" + JSON.stringify(tradesData))
@@ -1160,8 +1168,9 @@ export async function useNinjaTrader(param) {
  * RITHMIC (no swing trading)
  ****************************/
 // start papaparse from specific line number
-export async function useRithmic(param) {
+export async function useRithmic(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
 
             const lines = param.split('\n');
@@ -1296,7 +1305,7 @@ export async function useRithmic(param) {
                         temp.Liq = ""
                         temp.Note = ""
                         //console.log("temp "+JSON.stringify(temp))
-                        tradesData.push(temp)
+                        _tradesData.push(temp)
                     }
 
 
@@ -1316,8 +1325,9 @@ export async function useRithmic(param) {
  * FUNDTRADERS (no swing trading)
  ****************************/
 // Needs grouping by Symbol
-export async function useFundTraders(param) {
+export async function useFundTraders(param, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
 
             let papaParse = Papa.parse(param, { header: true })
@@ -1411,7 +1421,7 @@ export async function useFundTraders(param) {
                         temp.Liq = ""
                         temp.Note = ""
                         //console.log("temp "+JSON.stringify(temp))
-                        tradesData.push(temp)
+                        _tradesData.push(temp)
                     }
                 }
             }
@@ -1428,8 +1438,9 @@ export async function useFundTraders(param) {
 /****************************
  * TASTYTRADE
  ****************************/
-export async function useTastyTrade(param, param2) {
+export async function useTastyTrade(param, param2, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             let papaParse = Papa.parse(param, { header: true })
 
@@ -1563,7 +1574,7 @@ export async function useTastyTrade(param, param2) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
                 }
             });
             //console.log(" -> Trades Data\n" + JSON.stringify(tradesData))
@@ -1578,8 +1589,9 @@ export async function useTastyTrade(param, param2) {
 /****************************
  * TOPSTEPX
  ****************************/
-export async function useTopstepX(param, param2) {
+export async function useTopstepX(param, param2, ctx) {
     return new Promise(async (resolve, reject) => {
+        const _tradesData = ctx ? ctx.tradesData : tradesData
         try {
             let papaParse = Papa.parse(param, { header: true })
             //console.log("papaparse " + JSON.stringify(papaParse.data))
@@ -1669,7 +1681,7 @@ export async function useTopstepX(param, param2) {
                     temp.Liq = ""
                     temp.Note = ""
                     //console.log("temp "+JSON.stringify(temp))
-                    tradesData.push(temp)
+                    _tradesData.push(temp)
 
                 }
             });

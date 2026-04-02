@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
-RUN npm prune --omit=dev && npm install vite && rm -rf /root/.npm
+RUN npm prune --omit=dev && rm -rf /root/.npm
 
 # Stage 2: Production
 FROM node:22-alpine

@@ -5,11 +5,10 @@ services:
     hostname: tradenote_app
     build:
       context: .
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./Dockerfile
     image: tradenote:latest
     ports:
-    
-      - mongo
+      - 8080:8080
     environment:
       MONGO_URI: mongodb://tradenote:tradenote@mongo:27017/tradenote?authSource=admin
       TRADENOTE_DATABASE: tradenote

@@ -5,12 +5,13 @@ import ParseNode from 'parse/node.js'
 import path from 'path'
 import fs from 'fs'
 import axios from 'axios'
-import * as Vite from 'vite'
 import { MongoClient } from "mongodb"
 import Proxy from 'http-proxy'
 import { useImportTrades, useGetExistingTradesArray, useUploadTrades } from './src/utils/addTrades.js';
 import { currentUser, uploadMfePrices } from './src/stores/globals.js';
 import { useGetTimeZone } from './src/utils/utils.js';
+import { findUserByApiKey, validateTradeRequest, VALID_BROKERS } from './src/utils/apiValidation.js';
+import { createRequestContext } from './src/utils/requestContext.js';
 import Stripe from 'stripe';
 
 
@@ -368,27 +369,12 @@ const setupApiRoutes = (app) => {
     const validateApiKey = async (req, res, next) => {
         await getAllUsers()
         const targetKey = req.headers['api-key'];
-        //console.log(" -> target Key " + targetKey)
 
-        const checkIPKey = (allUsers, targetKey) => {
-            for (const user of Object.values(allUsers)) {
-                if (user.hasOwnProperty("apis")) {
-                    const index = user.apis.findIndex(obj => obj.key === targetKey);
-                    if (index !== -1) {
-                        currentUser.value = user
-                        return true;
-                    }
-                }
+        const matchedUser = findUserByApiKey(allUsers, targetKey);
 
-            }
-            return false; // Return false if not found
-        }
-
-        // Usage example
-        const hasIPKey = checkIPKey(allUsers, targetKey);
-
-        if (hasIPKey) {
+        if (matchedUser) {
             console.log(" -> Valid api key found :)")
+            currentUser.value = matchedUser
             next();
         } else {
             console.log(" -> Invalid api key")
@@ -396,28 +382,26 @@ const setupApiRoutes = (app) => {
         }
     }
 
-    const validBrokers = ["template", "tradeZero", "interactiveBrokers", "tdAmeritrade", "tradeStation", "tradovate", "metaTrader5", "heldentrader", "rithmic", "fundTraders", "ninjaTrader", "tastyTrade", "topstepX"]
-
     app.post('/api/trades', validateApiKey, async (req, res) => {
         const data = req.body;
         try {
-            if (!data || !Array.isArray(data.data) || data.data.length === 0) {
-                return res.status(400).send({ error: 'No trades to import. "data" must be a non-empty array.' });
+            const validation = validateTradeRequest(data);
+            if (!validation.valid) {
+                return res.status(validation.status).send({ error: validation.error });
             }
 
-            if (!data.selectedBroker || !validBrokers.includes(data.selectedBroker)) {
-                return res.status(400).send({ error: 'Invalid or missing "selectedBroker". Must be one of: ' + validBrokers.join(', ') });
-            }
+            // Create request-scoped context to isolate concurrent requests
+            const ctx = createRequestContext(
+                currentUser.value,
+                data.selectedBroker,
+                data.uploadMfePrices
+            )
 
-            uploadMfePrices.value = !!data.uploadMfePrices
-
-            //console.log(" uploadMfePrices "+uploadMfePrices.value)
-            // Call the function from addTrades.js
-
-            await useGetTimeZone()
-            await useGetExistingTradesArray("api", ParseNode)
-            await useImportTrades(data.data, "api", data.selectedBroker, ParseNode)
-            await useUploadTrades("api", ParseNode)
+            // Call the function from addTrades.js with isolated context
+            useGetTimeZone(ctx)
+            await useGetExistingTradesArray("api", ParseNode, ctx)
+            await useImportTrades(data.data, "api", data.selectedBroker, ParseNode, ctx)
+            await useUploadTrades("api", ParseNode, ctx)
 
             res.status(200).send(" -> Saved Trades to ParseNode DB");
         } catch (error) {
@@ -508,6 +492,7 @@ const startIndex = async () => {
                 });
     
                 // Start Vite dev server
+                const Vite = await import('vite');
                 const vite = await Vite.createServer({ server: { port: PROXY_PORT } });
                 vite.listen();
                 console.log(" -> Running vite dev server");

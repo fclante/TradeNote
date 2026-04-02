@@ -2,6 +2,7 @@
 import { onBeforeMount, onMounted, reactive, ref } from 'vue';
 import { useCheckCurrentUser, useInitTooltip, useGetAPIS, useGetLayoutStyle, useExport } from '../utils/utils';
 import { currentUser, renderProfile, availableTags, apis, layoutStyle } from '../stores/globals';
+import { generateApiKey as generateApiKeyUtil } from '../utils/generateApiKey';
 import { useGetAvailableTags } from '../utils/daily';
 
 /* MODULES */
@@ -411,12 +412,7 @@ const updateSortedTags = async () => {
  *********************/
 const generateAPIKey = () => {
     console.log(" generating ")
-    //create a cryptographically secure base-36 string that contains 30 chars in a-z,0-9
-    const array = new Uint8Array(30);
-    crypto.getRandomValues(array);
-    let apiKey = Array.from(array)
-        .map((b) => (b % 36).toString(36))
-        .join('');
+    let apiKey = generateApiKeyUtil();
 
     let index = apis.findIndex(obj => obj.provider === "tradeNote")
     if (index != -1) {
