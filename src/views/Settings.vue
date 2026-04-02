@@ -411,9 +411,11 @@ const updateSortedTags = async () => {
  *********************/
 const generateAPIKey = () => {
     console.log(" generating ")
-    //create a base-36 string that contains 30 chars in a-z,0-9
-    let apiKey = [...Array(30)]
-        .map((e) => ((Math.random() * 36) | 0).toString(36))
+    //create a cryptographically secure base-36 string that contains 30 chars in a-z,0-9
+    const array = new Uint8Array(30);
+    crypto.getRandomValues(array);
+    let apiKey = Array.from(array)
+        .map((b) => (b % 36).toString(36))
         .join('');
 
     let index = apis.findIndex(obj => obj.provider === "tradeNote")

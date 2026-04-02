@@ -347,20 +347,27 @@ const setupApiRoutes = (app) => {
     app.use(express.json());
 
     let allUsers
+    let allUsersCacheTime = 0
+    const ALL_USERS_CACHE_TTL = 60000 // 1 minute
     const getAllUsers = async () => {
+        const now = Date.now()
+        if (allUsers && (now - allUsersCacheTime) < ALL_USERS_CACHE_TTL) {
+            return
+        }
         console.log(" -> Getting all users")
         return new Promise(async (resolve, reject) => {
             const parseObject = ParseNode.Object.extend("_User");
             const query = new ParseNode.Query(parseObject);
             const results = await query.find({ useMasterKey: true });
             allUsers = JSON.parse(JSON.stringify(results))
+            allUsersCacheTime = now
             resolve()
         })
     }
 
     const validateApiKey = async (req, res, next) => {
         await getAllUsers()
-        const targetKey = req.headers['api-key'] || req.query['api-key'];
+        const targetKey = req.headers['api-key'];
         //console.log(" -> target Key " + targetKey)
 
         const checkIPKey = (allUsers, targetKey) => {
@@ -389,26 +396,30 @@ const setupApiRoutes = (app) => {
         }
     }
 
+    const validBrokers = ["template", "tradeZero", "interactiveBrokers", "tdAmeritrade", "tradeStation", "tradovate", "metaTrader5", "heldentrader", "rithmic", "fundTraders", "ninjaTrader", "tastyTrade", "topstepX"]
+
     app.post('/api/trades', validateApiKey, async (req, res) => {
         const data = req.body;
         try {
-            if (data && !data.data.length > 0) {
-                res.status(200).send(" -> No trades to import");
+            if (!data || !Array.isArray(data.data) || data.data.length === 0) {
+                return res.status(400).send({ error: 'No trades to import. "data" must be a non-empty array.' });
             }
-            else {
 
-                uploadMfePrices.value = data.uploadMfePrices
-
-                //console.log(" uploadMfePrices "+uploadMfePrices.value)
-                // Call the function from addTrades.js
-
-                await useGetTimeZone()
-                await useGetExistingTradesArray("api", ParseNode)
-                await useImportTrades(data.data, "api", data.selectedBroker, ParseNode)
-                await useUploadTrades("api", ParseNode)
-
-                res.status(200).send(" -> Saved Trades to ParseNode DB");
+            if (!data.selectedBroker || !validBrokers.includes(data.selectedBroker)) {
+                return res.status(400).send({ error: 'Invalid or missing "selectedBroker". Must be one of: ' + validBrokers.join(', ') });
             }
+
+            uploadMfePrices.value = !!data.uploadMfePrices
+
+            //console.log(" uploadMfePrices "+uploadMfePrices.value)
+            // Call the function from addTrades.js
+
+            await useGetTimeZone()
+            await useGetExistingTradesArray("api", ParseNode)
+            await useImportTrades(data.data, "api", data.selectedBroker, ParseNode)
+            await useUploadTrades("api", ParseNode)
+
+            res.status(200).send(" -> Saved Trades to ParseNode DB");
         } catch (error) {
             console.error(error);
             res.status(500).send({ error: 'Error creating executions' });
